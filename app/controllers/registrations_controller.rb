@@ -18,17 +18,14 @@ class RegistrationsController < ApplicationController
 
   # POST /registrations
   def create
-    @registration = Registration.new(registration_params)
-
-    respond_to do |format|
-      if @registration.save
-        format.html { redirect_to @registration, notice: 'Registration was successfully created.' }
-        format.json { render :show, status: :created, location: @registration }
-      else
-        format.html { render :new }
-        format.json { render json: @registration.errors, status: :unprocessable_entity }
-      end
-    end
+    @registration = Registration.new registration_params
+    raise "Please, check registration errors" unless @registration.valid?
+    @registration.process_payment
+    @registration.save
+    redirect_to @registration, notice: 'Registration was successfully created.'
+  rescue Exception => e
+    flash[:error] = e.message
+    render :new
   end
 
   private
@@ -39,6 +36,6 @@ class RegistrationsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def registration_params
-      params.require(:registration).permit(:course_id, :full_name, :company, :email, :telephone)
+      params.require(:registration).permit(:course_id, :full_name, :company, :email, :telephone, :card_token)
     end
 end
